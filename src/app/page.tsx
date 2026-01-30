@@ -1,33 +1,64 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type Msg = { role: "user" | "assistant"; text: string };
+type Msg = {
+  id: string;
+  role: "User" | "Assistant";
+  text: string;
+  ts: number;
+};
+
+function uuid() {
+  // Simple stable id (no external deps)
+  return crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 export default function Page() {
+  const [sessionId, setSessionId] = useState<string>("");
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", text: "สวัสดีครับ พิมพ์ข้อความเพื่อเริ่มแชทได้เลย" },
+    {
+      id: uuid(),
+      role: "Assistant",
+      text: "สวัสดีครับ พิมพ์ข้อความเพื่อเริ่มแชทได้เลย",
+      ts: Date.now(),
+    },
   ]);
-  const [input, setInput] = useState("");
+  const currentUser = {
+  id: "U-001",
+  name: "Somchai",
+  };
+  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const sessionId = useMemo(() => {
-    if (typeof window === "undefined") return "demo";
-    const key = "session_id";
-    const existing = localStorage.getItem(key);
-    if (existing) return existing;
-    const id = crypto.randomUUID();
-    localStorage.setItem(key, id);
-    return id;
+  // Create a session id once
+  useEffect(() => {
+    setSessionId(uuid());
   }, []);
 
-  async function send() {
-    const text = input.trim();
-    if (!text || busy) return;
+  // Auto scroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, busy]);
 
-    setInput("");
-    setMessages((m) => [...m, { role: "user", text }]);
+  const canSend = useMemo(() => text.trim().length > 0 && !busy && sessionId, [text, busy, sessionId]);
+
+  async function send() {
+    const userText = text.trim();
+    if (!userText || busy) return;
+
+    setText("");
     setBusy(true);
+
+    const userMsg: Msg = { id: uuid(), role: "User", text: userText, ts: Date.now() };
+    setMessages((m) => [...m, userMsg]);
+
+    const typingId = uuid();
+    setMessages((m) => [
+      ...m,
+      { id: typingId, role: "Assistant", text: "กำลังตอบ...", ts: Date.now() },
+    ]);
 
     try {
       const res = await fetch("/api/chat", {
@@ -35,58 +66,102 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          user_id: "U-001",
-          customer_name: "Somchai",
-          message: text,
+          user_id: currentUser.id,
+          customer_name: currentUser.name,
+          message: userText,
         }),
       });
 
-      const data = await res.json();
-      const reply = data?.reply ?? "ขออภัย ระบบไม่สามารถตอบได้ในขณะนี้";
-      setMessages((m) => [...m, { role: "assistant", text: reply }]);
-    } catch {
-      setMessages((m) => [...m, { role: "assistant", text: "เกิดข้อผิดพลาดในการเชื่อมต่อ" }]);
+      const data = await res.json().catch(() => ({}));
+
+      // Hard-fail safe
+      let reply: string =
+        typeof data?.reply === "string" && data.reply.trim() !== ""
+          ? data.reply
+          : "ขอโทษครับ ระบบไม่สามารถตอบได้ในขณะนี้";
+
+      // If reply accidentally contains n8n template, replace with safe message
+      if (reply.includes("{{$json") || reply.includes("={{$json")) {
+        reply = "ขอโทษครับ ระบบตอบกลับผิดรูปแบบ (ตรวจสอบ n8n response)";
+      }
+
+      // Update session id if backend returns one
+      if (typeof data?.session_id === "string" && data.session_id.trim() !== "") {
+        setSessionId(data.session_id);
+      }
+
+      // Replace typing placeholder with actual reply
+      setMessages((m) =>
+        m.map((x) => (x.id === typingId ? { ...x, text: reply, ts: Date.now() } : x))
+      );
+    } catch (e) {
+      // Replace typing placeholder with error
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === typingId
+            ? { ...x, text: "เกิดข้อผิดพลาดในการเชื่อมต่อ", ts: Date.now() }
+            : x
+        )
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <main className="min-h-screen p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">MVP Web Chat (Next.js → n8n → Gemini)</h1>
+    <div className="bg-white">
+      <div className="w-30  h-30 rounded-br-full bg-[#07234D] absolute"></div>
+      <div className="w-30  h-30 rounded-bl-full bg-[#07234D] absolute top-0 right-0"></div>
+      <main className=" bg-white p-6 max-w-3xl mx-auto h-screen">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="text-3xl font-bold mb-4 text-[#DF5E10] font-mochiy flex items-center justify-center">MVP Web Chat (Next.js → n8n → Gemini)</h1>
 
-      <div className="border rounded p-4 h-[60vh] overflow-auto space-y-3 bg-black">
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
-            <div className="inline-block max-w-[80%] rounded px-3 py-2 border">
-              <div className="text-xs opacity-60 mb-1">{m.role}</div>
-              <div className="whitespace-pre-wrap">{m.text}</div>
+          <div className="mt-10 rounded-xl border p-4 bg-[#D9D9D9]">
+            <div className="h-105 overflow-y-auto rounded-lg border border-black bg-[#D9D9D9] p-4">
+              <div className="space-y-6">
+                {messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex ${m.role === "User" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className="max-w-[75%] rounded-lg border p-3 border-black">
+                      <div className="text-xs font-mochiy text-[#DF5E10]">{m.role}</div>
+                      <div className="whitespace-pre-wrap font-[Prompt] text-black font-medium">{m.text}</div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={bottomRef} />
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <input
+                className="flex-1 rounded-lg border border-black px-4 py-3 text-[#757575] font-[prompt] font-bold"
+                placeholder="พิมพ์ข้อความ..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") send();
+                }}
+                disabled={busy}
+              />
+              <button
+                className="rounded-lg bg-[#DF5E10] font-mochiy px-6 py-3 text-white disabled:opacity-50"
+                onClick={send}
+                disabled={!canSend}
+              >
+                Send
+              </button>
+            </div>
+
+            <div className="mt-3 text-sm text-gray-600">
+              Session: <span className="font-mono">{sessionId}</span>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-4 flex gap-2">
-        <input
-          className="flex-1 border rounded px-3 py-2"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="พิมพ์ข้อความ..."
-          disabled={busy}
-        />
-        <button
-          className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-          onClick={send}
-          disabled={busy}
-        >
-          Send
-        </button>
-      </div>
-
-      <div className="text-sm text-gray-600 mt-2">
-        Session: {sessionId} {busy ? " | กำลังคิด..." : ""}
-      </div>
-    </main>
+        </div>
+      </main>
+      <footer className="flex flex-col items-center justify-center w-full h-24 bg-[#07234D] absolute bottom-0">
+      </footer>
+    </div>
   );
 }
