@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# # AI Web Chat with n8n & Google Sheets
 
-First, run the development server:
+โปรเจกต์นี้เป็น Web Application สำหรับการแชทถาม-ตอบ (Q&A) ที่พัฒนาส่วน Frontend ด้วย **Next.js (TypeScript)** โดยเชื่อมต่อการประมวลผลเบื้องหลังผ่าน **n8n Workflow Automation** และทำการบันทึกประวัติการสนทนาทั้งหมดลงใน **Google Sheets** แบบ Real-time
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+----------
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+##  Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+-   **Interactive Chat Interface:** หน้าจอแชทที่ตอบสนองไว ใช้งานง่าย รองรับภาษาไทย
+    
+-   **n8n Integration:** ใช้ n8n เป็น Backend ในการจัดการ Logic, เชื่อมต่อ AI Model หรือค้นหาข้อมูลเพื่อตอบคำถาม
+    
+-   **History Logging:** บันทึกทุกคำถามและคำตอบ (Chat History) ลงใน Google Sheets โดยอัตโนมัติเพื่อเก็บข้อมูล
+    
+-   **Type-Safe:** พัฒนาด้วย TypeScript ทั้งหมด เพื่อความเสถียรและง่ายต่อการดูแลรักษา
+    
+-   **Modern UI:** ใช้ Next.js ร่วมกับ Tailwind ในการจัดหน้า
+    
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+----------
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+##  Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Frontend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+-   **Framework:** [Next.js](https://nextjs.org/) (App Router / Pages Router)
+    
+-   **Language:** TypeScript (`.tsx`)
+    
+-   **Styling:** Tailwind CSS 
 
-## Deploy on Vercel
+### Backend & Database
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+-   **Workflow Automation:** [n8n](https://n8n.io/) (Webhook Trigger)
+    
+-   **Database:** Google Sheets (ผ่าน n8n Google Sheets Node)
+    
+----------
+## Team Diao koy tang
+| **Student ID** | **Name**               |
+|-----------------|------------------------|
+| 67023008        | Apinya Sanghong        |
+| 67025077        | Supharoke Roopkhamdee     | 
+| 67026427        | Pattarawin Rungpanarat |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+## Demo
+[web-chat-ai](https://web-chat-ai-mu.vercel.app/)
+
+---
+
+## Contact
+**หากมีคำถาม สามารถติดต่อผู้ดูแลโปรเจค:**
+  -  อีเมล: naysasatadur5555@gmail.com
+  -  GitHub: [https://github.com/pxttxrxwxn](https://github.com/pxttxrxwxn)
