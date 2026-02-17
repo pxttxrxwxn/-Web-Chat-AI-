@@ -1,5 +1,5 @@
 
-# # AI Web Chat with n8n & Google Sheets
+## AI Web Chat with n8n & Google Sheets
 
 โปรเจกต์นี้เป็น Web Application สำหรับการแชทถาม-ตอบ (Q&A) ที่พัฒนาส่วน Frontend ด้วย **Next.js (TypeScript)** โดยเชื่อมต่อการประมวลผลเบื้องหลังผ่าน **n8n Workflow Automation** และทำการบันทึกประวัติการสนทนาทั้งหมดลงใน **Google Sheets** แบบ Real-time
 
